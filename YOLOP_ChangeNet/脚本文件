@@ -1,0 +1,8 @@
+
+# 测试模型效果
+    python tools/test.py --weights ./runs/BddDataset/final_state.pth
+
+# 导出模型
+    python ./export_onnx.py --height 640 --width 640
+    python ./export_onnx.py --height 620 --width 620
+
