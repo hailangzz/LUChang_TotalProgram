@@ -1,0 +1,1 @@
+import osall_images = os.listdir(r"F:\AiTotalDatabase\UTKFace")print(all_images)max_grants_values=0for image_name in all_images:    use_value = int(image_name.split('_')[1])    if use_value>max_grants_values:        max_grants_values=use_value        print(image_name)
