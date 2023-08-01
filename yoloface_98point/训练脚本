@@ -1,0 +1,4 @@
+python train.py --data data/widerface_98.yaml --cfg models/yolov5s.yaml --weights 'weights/yolov5s.pt' --notest
+
+# 测试模型效果：
+python detect.py --weights ./runs/train/exp35/weights/last.pt --source D:\20230606140229.jpg

@@ -1,0 +1,12 @@
+*.pt
+*.xml
+*.bin
+*.mapping
+*.onnx
+*.jpg
+*.jpeg
+*.png
+*.txt
+*.cache
+*.zip
+!requirements.txt
