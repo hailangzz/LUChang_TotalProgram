@@ -1,0 +1,10 @@
+python train.py --data data/widerface.yaml --cfg models/yolov5s.yaml --weights 'weights/yolov5s.pt' --notest
+
+# 测试模型效果：
+python test_widerface.py --weights ./runs\train\exp36\weights\best.pt --img-size 640
+
+# 检测人脸框
+python test_widerface_4point.py --weights ./runs\train\exp36\weights\best.pt --img-size 640
+# 检测关键点
+python detect_face_4point.py --weights ./runs\train\exp36\weights\best.pt --img-size 640
+
