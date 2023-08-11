@@ -1,0 +1,4 @@
+*.o
+*.so
+cameraservice
+lc_dvr_record
