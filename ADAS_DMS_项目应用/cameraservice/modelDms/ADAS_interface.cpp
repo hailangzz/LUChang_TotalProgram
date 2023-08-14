@@ -5,7 +5,7 @@
 #include <string>
 #include <ADAS_interface.h>
 
-//æ¨¡å‹åç§°
+//Ä£ĞÍÃû³Æ
 char ModelList[10][256] = {"/system/app/model/yolov5s_dms16_384.npumodel","/system/app/model/eye16.npumodel", "/system/app/model/yolop-det-ll-352-640.npumodel"};
 
 static int frame_image_number=0;
@@ -44,54 +44,54 @@ int UNINIT_ADAS_MODEL()
     return 0;
   }
 
-//#define DMS 1  //å½“ç¼–è¯‘DMSæ¨¡å‹æ—¶
-#define DMS 0  //å½“ç¼–è¯‘ADASæ¨¡å‹æ—¶
+//#define DMS 1  //µ±±àÒëDMSÄ£ĞÍÊ±
+#define DMS 0  //µ±±àÒëADASÄ£ĞÍÊ±
 
 
 int ADAS_infer2(const ImageData2_ADAS* data, zxw_adas_Paramaters *ADAS_param, zxw_object_result *YolopDetectResult, cv::Mat *LaneImg, ADASDetectResult *ADASResult)
 {
-    ADAS_param->speed_kmh = 70;                  //70km/h        è½¦è¾†å®æ—¶é€Ÿåº¦  ç”¨äºè®¡ç®—è½¦è·è¿‡è¿‘ 
-    ADAS_param->lane_threshold = 2.0;         // 2.0-3.0 è½¦é“åç¦»  è¶Šå°è¶Šæ•æ„Ÿ  å¯æœ¬åœ°è§†é¢‘æµ‹è¯•
-    ADAS_param->hit_threshold = 3.0;            //è½¦è¾†ç¢°æ’  è¶Šå¤§è¶Šæ•æ„Ÿ  ä¸å»ºè®®æœ¬åœ°è§†é¢‘æµ‹è¯• éœ€è¦å®é™…è·¯ä¸Šæµ‹è¯•
-    ADAS_param->tooclose_threshold = 0.4;    //è½¦è·è¿‡è¿‘  è¶Šå¤§è¶Šæ•æ„Ÿ   å¯æœ¬åœ°è§†é¢‘æµ‹è¯•
+    ADAS_param->speed_kmh = 70;                  //70km/h        ³µÁ¾ÊµÊ±ËÙ¶È  ÓÃÓÚ¼ÆËã³µ¾à¹ı½ü 
+    ADAS_param->lane_threshold = 2.0;         // 2.0-3.0 ³µµÀÆ«Àë  Ô½Ğ¡Ô½Ãô¸Ğ  ¿É±¾µØÊÓÆµ²âÊÔ
+    ADAS_param->hit_threshold = 3.0;            //³µÁ¾Åö×²  Ô½´óÔ½Ãô¸Ğ  ²»½¨Òé±¾µØÊÓÆµ²âÊÔ ĞèÒªÊµ¼ÊÂ·ÉÏ²âÊÔ
+    ADAS_param->tooclose_threshold = 0.4;    //³µ¾à¹ı½ü  Ô½´óÔ½Ãô¸Ğ   ¿É±¾µØÊÓÆµ²âÊÔ
     
-    int width=data->image_width;  // å›¾åƒå®½åº¦
-    int height=data->image_height; // å›¾åƒé«˜åº¦
+    int width=data->image_width;  // Í¼Ïñ¿í¶È
+    int height=data->image_height; // Í¼Ïñ¸ß¶È
     
-    // è·å–ç¨‹åºå¼€å§‹æ—¶é—´ç‚¹
+    // »ñÈ¡³ÌĞò¿ªÊ¼Ê±¼äµã
     auto start = std::chrono::high_resolution_clock::now();
     
-    // åˆ›å»ºä¸€ä¸ª cv::Mat å¯¹è±¡ï¼Œå°†æŒ‡é’ˆæ•°æ®è½¬æ¢ä¸ºå›¾åƒ
-    static cv::Mat image(height, width, CV_8UC3); // åˆ›å»ºä¸€ä¸ª 3 é€šé“çš„å›¾åƒå¯¹è±¡
-    // å°†æ•°æ®å¤åˆ¶åˆ°å›¾åƒä¸­
+    // ´´½¨Ò»¸ö cv::Mat ¶ÔÏó£¬½«Ö¸ÕëÊı¾İ×ª»»ÎªÍ¼Ïñ
+    static cv::Mat image(height, width, CV_8UC3); // ´´½¨Ò»¸ö 3 Í¨µÀµÄÍ¼Ïñ¶ÔÏó
+    // ½«Êı¾İ¸´ÖÆµ½Í¼ÏñÖĞ
     for (int y = 0; y < height; ++y)
     {
         for (int x = 0; x < width; ++x)
         {
-            // è®¡ç®—å½“å‰åƒç´ åœ¨å†…å­˜ä¸­çš„ç´¢å¼•
+            // ¼ÆËãµ±Ç°ÏñËØÔÚÄÚ´æÖĞµÄË÷Òı
             int index = y * width + x;
     
-            // ä»æŒ‡é’ˆæ•°æ®ä¸­è·å– Rã€Gã€B é€šé“çš„åƒç´ å€¼
+            // ´ÓÖ¸ÕëÊı¾İÖĞ»ñÈ¡ R¡¢G¡¢B Í¨µÀµÄÏñËØÖµ
             unsigned char  r = data->r_ChannelData[index];
             unsigned char  g = data->g_ChannelData[index];
             unsigned char  b = data->b_ChannelData[index];
     
-            // è®¾ç½®å›¾åƒçš„åƒç´ å€¼
+            // ÉèÖÃÍ¼ÏñµÄÏñËØÖµ
             image.at<cv::Vec3b>(y, x) = cv::Vec3b(b, g, r);
         }
     }
-    // è·å–ç¨‹åºç»“æŸæ—¶é—´ç‚¹
+    // »ñÈ¡³ÌĞò½áÊøÊ±¼äµã
     auto end = std::chrono::high_resolution_clock::now();
-    // è®¡ç®—ç¨‹åºè¿è¡Œæ—¶é—´
+    // ¼ÆËã³ÌĞòÔËĞĞÊ±¼ä
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    // è¾“å‡ºè¿è¡Œæ—¶é—´
-    std::cout << "rgbæŒ‡é’ˆè½¬MatèŠ±è´¹æ—¶é—´: " << duration << " æ¯«ç§’" << std::endl;
+    // Êä³öÔËĞĞÊ±¼ä
+    std::cout << "rgbÖ¸Õë×ªMat»¨·ÑÊ±¼ä: " << duration << " ºÁÃë" << std::endl;
     
-    u_char *virt_base_addr;                        //æš‚æ—¶ä¸æ”¯æŒyuvè¾“å…¥ï¼Œ åç»­æ”¯æŒ
+    u_char *virt_base_addr;                        //ÔİÊ±²»Ö§³ÖyuvÊäÈë£¬ ºóĞøÖ§³Ö
 
     
     
-    //std::ofstream outputFile("DMS_Result.txt"); // åˆ›å»ºä¸€ä¸ªåä¸ºexample.txtçš„æ–‡æœ¬æ–‡ä»¶
+    //std::ofstream outputFile("DMS_Result.txt"); // ´´½¨Ò»¸öÃûÎªexample.txtµÄÎÄ±¾ÎÄ¼ş
 
         
     ZXW_ADAS_Detect(image, virt_base_addr,*ADAS_param, YolopDetectResult, LaneImg,ADASResult);
@@ -108,43 +108,43 @@ int number = 0;
 int ADAS_infer(const ImageData_ADAS* data, zxw_adas_Paramaters *ADAS_param, zxw_object_result *YolopDetectResult, cv::Mat *LaneImg, ADASDetectResult *ADASResult)
 {
     
-    ADAS_param->speed_kmh = 70;                  //70km/h        è½¦è¾†å®æ—¶é€Ÿåº¦  ç”¨äºè®¡ç®—è½¦è·è¿‡è¿‘ 
-    ADAS_param->lane_threshold = 2.0;         // 2.0-3.0 è½¦é“åç¦»  è¶Šå°è¶Šæ•æ„Ÿ  å¯æœ¬åœ°è§†é¢‘æµ‹è¯•
-    ADAS_param->hit_threshold = 3.0;            //è½¦è¾†ç¢°æ’  è¶Šå¤§è¶Šæ•æ„Ÿ  ä¸å»ºè®®æœ¬åœ°è§†é¢‘æµ‹è¯• éœ€è¦å®é™…è·¯ä¸Šæµ‹è¯•
-    ADAS_param->tooclose_threshold = 0.4;    //è½¦è·è¿‡è¿‘  è¶Šå¤§è¶Šæ•æ„Ÿ   å¯æœ¬åœ°è§†é¢‘æµ‹è¯•
+    ADAS_param->speed_kmh = 70;                  //70km/h        ³µÁ¾ÊµÊ±ËÙ¶È  ÓÃÓÚ¼ÆËã³µ¾à¹ı½ü 
+    ADAS_param->lane_threshold = 2.0;         // 2.0-3.0 ³µµÀÆ«Àë  Ô½Ğ¡Ô½Ãô¸Ğ  ¿É±¾µØÊÓÆµ²âÊÔ
+    ADAS_param->hit_threshold = 3.0;            //³µÁ¾Åö×²  Ô½´óÔ½Ãô¸Ğ  ²»½¨Òé±¾µØÊÓÆµ²âÊÔ ĞèÒªÊµ¼ÊÂ·ÉÏ²âÊÔ
+    ADAS_param->tooclose_threshold = 0.4;    //³µ¾à¹ı½ü  Ô½´óÔ½Ãô¸Ğ   ¿É±¾µØÊÓÆµ²âÊÔ
     
-    if (frame_index%4==0) //å¦‚æœå¸§æ•°èƒ½æ•´é™¤12åˆ™è¿›å…¥é¢„æµ‹æ“ä½œÂ·Â·Â·Â·
+    if (frame_index%4==0) //Èç¹ûÖ¡ÊıÄÜÕû³ı12Ôò½øÈëÔ¤²â²Ù×÷¡¤¡¤¡¤¡¤
       {
       try
           {
       
       //std::cout << "the main program into DMS_infer!!!"<< std::endl;
       //std::cout << std::to_string(data->image_width)<< std::endl;
-      int width=data->image_width;  // å›¾åƒå®½åº¦
-      int height=data->image_height; // å›¾åƒé«˜åº¦
+      int width=data->image_width;  // Í¼Ïñ¿í¶È
+      int height=data->image_height; // Í¼Ïñ¸ß¶È
       
-      // è·å–ç¨‹åºå¼€å§‹æ—¶é—´ç‚¹
+      // »ñÈ¡³ÌĞò¿ªÊ¼Ê±¼äµã
       // auto start = std::chrono::high_resolution_clock::now();
       
       //cv::Mat image(height, width, CV_8UC3, data->rgb_data);
       cv::Mat image(384, 384, CV_8UC3, data->rgb_data);
       
-      // è¾“å‡ºå›¾åƒå°ºå¯¸ä¿¡æ¯
+      // Êä³öÍ¼Ïñ³ß´çĞÅÏ¢
       std::cout << "ADAS Image width: " << image.cols << " pixels" << std::endl;
       std::cout << "ADAS Image height: " << image.rows << " pixels" << std::endl;
 
-      //å°ºå¯¸è½¬æ¢
+      //³ß´ç×ª»»
       cv::Mat resizedImage;
       cv::resize(image, resizedImage, cv::Size(640, 352));
       
       //
-      // ä¿å­˜å›¾åƒ
+      // ±£´æÍ¼Ïñ
       cv::imwrite("/tmp/"+std::to_string(number) + ".jpg", image);
   
-      std::cout << "adas å›¾åƒå·²ä¿å­˜è‡³ï¼š/tmp/"+std::to_string(number) + ".jpg"<< std::endl;
+      std::cout << "adas Í¼ÏñÒÑ±£´æÖÁ£º/tmp/"+std::to_string(number) + ".jpg"<< std::endl;
       number++;
       //std::cout << "the program will enter ZXW_DMS_Detect() !"<< std::endl;
-      u_char *virt_base_addr;                        //æš‚æ—¶ä¸æ”¯æŒyuvè¾“å…¥ï¼Œ åç»­æ”¯æŒ
+      u_char *virt_base_addr;                        //ÔİÊ±²»Ö§³ÖyuvÊäÈë£¬ ºóĞøÖ§³Ö
       ZXW_ADAS_Detect(resizedImage, virt_base_addr,*ADAS_param, YolopDetectResult, LaneImg,ADASResult);
       
       if(ADASResult->event_lanechange == 1){
@@ -160,44 +160,44 @@ int ADAS_infer(const ImageData_ADAS* data, zxw_adas_Paramaters *ADAS_param, zxw_
             cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_ADAS_event_hit" +".jpg", image);
         }
         
-      //ä¿å­˜åˆ†å‰²å›¾ç‰‡
+      //±£´æ·Ö¸îÍ¼Æ¬
       //cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_lane_line" +".jpg", cv::InputArray(LaneImg));
       cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_lane_line" +".jpg", *LaneImg);
       
       //std::cout << "ZXW_DMS_Detect() is finished !"<< std::endl;
       /*
       
-      // è·å–ç¨‹åºç»“æŸæ—¶é—´ç‚¹
+      // »ñÈ¡³ÌĞò½áÊøÊ±¼äµã
       // auto end = std::chrono::high_resolution_clock::now();
-      // è®¡ç®—ç¨‹åºè¿è¡Œæ—¶é—´
+      // ¼ÆËã³ÌĞòÔËĞĞÊ±¼ä
       // auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-      // è¾“å‡ºè¿è¡Œæ—¶é—´
-      // std::cout << "å›¾ç‰‡è½¬rgbæŒ‡é’ˆèŠ±è´¹æ—¶é—´: " << duration << " æ¯«ç§’" << std::endl;
+      // Êä³öÔËĞĞÊ±¼ä
+      // std::cout << "Í¼Æ¬×ªrgbÖ¸Õë»¨·ÑÊ±¼ä: " << duration << " ºÁÃë" << std::endl;
       
-      u_char *virt_base_addr;                        //æš‚æ—¶ä¸æ”¯æŒyuvè¾“å…¥ï¼Œ åç»­æ”¯æŒ
+      u_char *virt_base_addr;                        //ÔİÊ±²»Ö§³ÖyuvÊäÈë£¬ ºóĞøÖ§³Ö
   
       
       
-      //std::ofstream outputFile("DMS_Result.txt"); // åˆ›å»ºä¸€ä¸ªåä¸ºexample.txtçš„æ–‡æœ¬æ–‡ä»¶
+      //std::ofstream outputFile("DMS_Result.txt"); // ´´½¨Ò»¸öÃûÎªexample.txtµÄÎÄ±¾ÎÄ¼ş
   
-      //DMSDetectResult DMSresult;                    //DMSè¯†åˆ«ç»“æœ
-      //zxw_object_result Detectresult[20];      //æ£€æµ‹çš„æ¡†
+      //DMSDetectResult DMSresult;                    //DMSÊ¶±ğ½á¹û
+      //zxw_object_result Detectresult[20];      //¼ì²âµÄ¿ò
       //memset(Detectresult, 0, sizeof(zxw_object_result)*20);
-      // è·å–ç¨‹åºå¼€å§‹æ—¶é—´ç‚¹
+      // »ñÈ¡³ÌĞò¿ªÊ¼Ê±¼äµã
       auto start = std::chrono::high_resolution_clock::now();
       ZXW_DMS_Detect(image, virt_base_addr, YoloDetectResult, dms_detect_result);
-      // è·å–ç¨‹åºç»“æŸæ—¶é—´ç‚¹
+      // »ñÈ¡³ÌĞò½áÊøÊ±¼äµã
       auto end = std::chrono::high_resolution_clock::now();
   
-      // è®¡ç®—ç¨‹åºè¿è¡Œæ—¶é—´
+      // ¼ÆËã³ÌĞòÔËĞĞÊ±¼ä
       auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
   
-      // è¾“å‡ºè¿è¡Œæ—¶é—´
-      std::cout << "ZXW_DMS_Detectè¿è¡Œæ—¶é—´: " << duration << " æ¯«ç§’" << std::endl;
+      // Êä³öÔËĞĞÊ±¼ä
+      std::cout << "ZXW_DMS_DetectÔËĞĞÊ±¼ä: " << duration << " ºÁÃë" << std::endl;
       
       */
           }catch (const std::exception& e){
-              // æ•è·å¹¶å¤„ç†å¼‚å¸¸
+              // ²¶»ñ²¢´¦ÀíÒì³£
               std::cerr << "Exception caught: " << e.what() << std::endl;
           }
       }
