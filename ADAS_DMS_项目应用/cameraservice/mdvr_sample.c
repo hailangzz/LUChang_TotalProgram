@@ -114,9 +114,9 @@ typedef struct _vpssFrameStruct_
 
 /*mdvr add*/
 int g_player_handle = -1;
-MediaInfo g_media_Info;			/**当前播放视频的信息**/
-int g_play_time_current;		/**当前的播放进度**/
-int g_play_status_current;		/**播放状态(1) 暂停状态(0) 结束状态(-1)**/
+MediaInfo g_media_Info;			/**???????????????**/
+int g_play_time_current;		/**???????????**/
+int g_play_status_current;		/**??????(1) ?????(0) ??????(-1)**/
 VIM_BOOL g_player_show = VIM_FALSE;
 VIM_BOOL g_player_flag = VIM_FALSE;
 int playStartEvent = 0;
@@ -129,11 +129,11 @@ MediaInfo recInfo;
 static pthread_mutex_t g_rtspMutex;
 static int g_rtspStartCount = 0;
 
-/**中星微录像方式的宏定义**/
+/**??????????????**/
 //#define VIM_RECORD_PATH
 //#define VIM_WITH_PICTURE
 
-#define PACK_H265    /*打开此宏使用H265编码, 否则使用SVAC编码*/
+#define PACK_H265    /*????????H265????, ???????SVAC????*/
 #define RECORD_DEBUG
 //#define PREFIX_PATH         "/mnt/nfs"
 #define PREFIX_PATH         "/mnt/usb/usb1"
@@ -146,7 +146,7 @@ static int g_rtspStartCount = 0;
 #define LC_VC_1920x1080_CHANEL 0
 #define LC_VC_960X544_CHANEL   2
 #define LC_VC_1280X720_CHANEL  3
-#define LC_VC_VENC_CHANEL1 	   1  /**中星微编码通道**/
+#define LC_VC_VENC_CHANEL1 	   1  /**????????????**/
 #define LC_ALGORITEM_SIZE	   384
 #define LC_ALGORITEM_SIZE_ADAS_width	   640
 #define LC_ALGORITEM_SIZE_ADAS_height	   352
@@ -156,7 +156,9 @@ static int g_rtspStartCount = 0;
 
 static pthread_rwlock_t g_vo_rwlock;
 static VIM_BOOL View_Exit = VIM_FALSE;
-static int Dms_Switch = 0;    //DMS 鍔熻兘寮�鍏?static int Adas_Switch = 1;   //ADAS鍔熻兘寮�鍏? 
+static int Dms_Switch = 0;    //DMS 功能开关
+static int Adas_Switch = 1;   //ADAS功能开关
+ 
 static const char short_options[] = "hc:o:m:v:r:a:t:p:b:e:g:q:n:s:d:f:i:z:y:x:u";
 int mainPreview = 0;
 int isSetSize = 0;
@@ -565,9 +567,9 @@ int lc_AudioFrameCb(const AFrameInfo* info, const unsigned char* data, int len, 
 void sample_feed_vo(void *chan)
 {
 	int ret = 0;
-	int vpssId = 5;//0原始分辨率 5缩小
+	int vpssId = 5;//0??????? 5??С
 	int continueSign;
-	showChan = 0;//用于轮询的通道变量
+	showChan = 0;//????????????????
 	MultiChanBind Vo_MultiChanInfo = {0};
 	voImageCfg setStride = {0};
 	VIM_VPSS_FRAME_INFO_S stFrameInfo = {0};
@@ -578,7 +580,7 @@ void sample_feed_vo(void *chan)
 	vpssId = *((int*)chan);
 	printf("sample_feed_vo~ pthread success chan %d\n",vpssId);
 	if(LC_VC_1920x1080_CHANEL == vpssId)
-	{//原始分辨率
+	{//???????
 		while(1)
 		{
 			continueSign = 0;
@@ -587,7 +589,7 @@ void sample_feed_vo(void *chan)
 				break;
 			}
 			
-			if(0 != mainPreview) // mainPreview == 1为1080预览
+			if(0 != mainPreview) // mainPreview == 1?1080???
 			{
 				if(0 == isSetSize)
 				{
@@ -615,10 +617,10 @@ void sample_feed_vo(void *chan)
 	        	{
 		        	LC_VENC_STREAM_INFO *streamCtr = vc_stream_venc_resolution_get(chl);					
 		        	if(streamCtr->on_off)
-		        	{/**对选定通道的图像进行编码**/
+		        	{/**???????????????б???**/
 		        		if((streamCtr->resolution == STREAM_1920X1080_ENU)&&(stFrameInfo.u32SrcVidChn == streamCtr->camChnl))
 		        		{        		
-		        			lc_venc_sendFrame_getStream(streamCtr->codeChnl, &stFrameInfo); /**推流用通道**/
+		        			lc_venc_sendFrame_getStream(streamCtr->codeChnl, &stFrameInfo); /**?????????**/
 		        		}
 		        	}
 	        	}
@@ -656,7 +658,7 @@ void sample_feed_vo(void *chan)
 		    int bRelease = 1;
 		    pthread_rwlock_rdlock(&g_vo_rwlock);
 			if((0 != mainPreview)&&(showChan == Vo_MultiChanInfo.chan) && (VIM_FALSE == g_player_flag))
-			{//不分块并且get的是想显示的通道
+			{//????鲢??get??????????????
 				Vo_MultiChanInfo.chan = 0;
 				//printf("inqueue[%d]==================group:%d, chan:%d, vpssid:%d,  pPhyAddrStd=%#x.\n", __LINE__, 0, showChan, vpssId, Vo_MultiChanInfo.codeAddr_y);
                 setVpssFrameList(&(stFrameInfo), 0, vpssId);
@@ -689,13 +691,13 @@ void sample_feed_vo(void *chan)
 				break;
 			}
 			if (0 == mainPreview)
-			{//分块 缩小尺寸
+			{//??? ??С???
 				if(0 == isSetSize)
 				{
 					VIM_MPI_VO_SetMultiMode(Multi_2X2,MULTI_CONTROL_AUTO,NULL,NULL);
 					printf("change MultiMode Multi_2X2[%d].\n", __LINE__);
 					Vo_MultiChanInfo.workMode = Multi_2X2;
-					setStride.chan = 0;//只有0通道被修改，其它通道默认是分块的尺寸，这里只需要重置0通道就行了
+					setStride.chan = 0;//???0?????????????????????????磬????????????0?????????
 					setStride.LayerId = 0;
 					setStride.voDev = 1;
 					setStride.weight = 960;
@@ -712,15 +714,15 @@ void sample_feed_vo(void *chan)
 
 			if(ret == 0)
 			{
-				//========================推流数据获取===========================
+				//========================??????????===========================
 				for(int chl=0; chl<4; chl++)
 				{
 					LC_VENC_STREAM_INFO *streamCtr = vc_stream_venc_resolution_get(chl);	
 					if(streamCtr->on_off)
-					{/**对选定通道的图像进行编码**/
+					{/**???????????????б???**/
 						if((streamCtr->resolution == STREAM_960X544_ENU)&&(stFrameInfo.u32SrcVidChn == streamCtr->camChnl))
 						{
-							lc_venc_sendFrame_getStream(streamCtr->codeChnl, &stFrameInfo); /**推流用通道**/
+							lc_venc_sendFrame_getStream(streamCtr->codeChnl, &stFrameInfo); /**?????????**/
 						}
 					}	
 				}
@@ -757,7 +759,7 @@ void sample_feed_vo(void *chan)
 
             int bRelease = 1;
 		    pthread_rwlock_rdlock(&g_vo_rwlock);
-			//分块则get到的流都显示
+			//?????get???????????
 			if ((0 == mainPreview) && (VIM_FALSE == g_player_flag))
 			{
 				//printf("inqueue[%d]==================group:%d, chan:%d, vpssid:%d,  pPhyAddrStd=%#x.\n", __LINE__, 0, Vo_MultiChanInfo.chan, vpssId, Vo_MultiChanInfo.codeAddr_y);
@@ -786,7 +788,7 @@ void sample_feed_vo(void *chan)
 	}
 }
 
-/**Stream用通道1280x720**/
+/**Stream?????1280x720**/
 void *vc_channel3_handler(void *arg)
 {
     int ret = -1;
@@ -835,10 +837,10 @@ void *vc_channel3_handler(void *arg)
 			{
 				LC_VENC_STREAM_INFO *streamCtr = vc_stream_venc_resolution_get(chl);
 	        	if(streamCtr->on_off)
-	        	{/**对选定通道的图像进行编码**/
+	        	{/**???????????????б???**/
 	        		if((streamCtr->resolution == STREAM_1280X720_ENU)&&(stFrameInfo.u32SrcVidChn == streamCtr->camChnl))
 	        		{
-	        			lc_venc_sendFrame_getStream(streamCtr->codeChnl, &stFrameInfo); /**推流用通道**/
+	        			lc_venc_sendFrame_getStream(streamCtr->codeChnl, &stFrameInfo); /**?????????**/
 	        		}
 	        	}
 
@@ -903,7 +905,7 @@ void *vc_channel3_handler(void *arg)
 	
 	if(mFrameCnt == 2400)
 	{
-	  /** 录像回放测试，播放视频文件 **/
+	  /** ??????????????????? **/
 		logd_lc("file play startxxx (%d)!", mplayTimes++);
 		char *filePath = (char*)sys_msg_get_memcache(128);
 		sprintf(filePath, "/mnt/sdcard/TestVideoH265_1080.MP4");
@@ -960,7 +962,7 @@ void *vc_channel3_handler(void *arg)
 //				LC_TAKE_PIC_INFO *picInfo = (LC_TAKE_PIC_INFO*)sys_msg_get_memcache(256);		
 //				picInfo->pic_width = LC_TAKE_LARGE_PIC_SIZE_W;
 //				picInfo->pic_height = LC_TAKE_LARGE_PIC_SIZE_H;
-//				picInfo->camChnl = 3; /**拍照的摄像头通道选择**/
+//				picInfo->camChnl = 3; /**????????????????**/
 //				sprintf(picInfo->pic_save_path, "/mnt/usb/usb1/WondPic1088.jpg"); 
 //				vc_message_send(ENU_LC_DVR_MDVR_TAKEPIC, 0, picInfo, NULL);
 //			}
@@ -969,7 +971,7 @@ void *vc_channel3_handler(void *arg)
 //				LC_TAKE_PIC_INFO *picInfo = (LC_TAKE_PIC_INFO*)sys_msg_get_memcache(256);				
 //				picInfo->pic_width = LC_TAKE_STREAM_PIC_SIZE_W;
 //				picInfo->pic_height = LC_TAKE_STREAM_PIC_SIZE_H;
-//				picInfo->camChnl = 3; /**拍照的摄像头通道选择**/
+//				picInfo->camChnl = 3; /**????????????????**/
 //				sprintf(picInfo->pic_save_path, "/mnt/usb/usb1/WondPic544.jpg");
 //				vc_message_send(ENU_LC_DVR_MDVR_TAKEPIC, 0, picInfo, NULL);
 //			}
@@ -977,7 +979,7 @@ void *vc_channel3_handler(void *arg)
 
 			if(mFrameCnt==500)
 			{ 
-			  /** 录像回放测试，播放视频文件 **/
+			  /** ??????????????????? **/
 				logd_lc("file play start (%d)!", mplayTimes++);
 				char *filePath = (char*)sys_msg_get_memcache(128);
 				// sprintf(filePath, "/mnt/sd/leftVideo2/003-GBT19056_QB84936_2_20230209104156.mp4");
@@ -1028,7 +1030,7 @@ void *vc_channel3_handler(void *arg)
 //				mDisplayChnl++;
 //				if(mDisplayChnl==5) mDisplayChnl = 0;
 
-//				vc_message_send(ENU_LC_DVR_MSG_FOR_TEST, mDisplayChnl, NULL, NULL); /**???????????б????*/	
+//				vc_message_send(ENU_LC_DVR_MSG_FOR_TEST, mDisplayChnl, NULL, NULL); /**?????????????????*/	
 //			}
 		}
 #endif 		
@@ -1088,7 +1090,7 @@ void *vc_algorithem_handler(void *arg)
 }
 #endif
 
-/**Stream用通道384x384，DMS跟ADAS算法使用的视频流**/
+/**Stream?????384x384??DMS??ADAS???????????**/
 void *vc_channel4_handler(void *arg)
 {
     int ret = -1;
@@ -1118,8 +1120,10 @@ void *vc_channel4_handler(void *arg)
 					colorR = (char*)stFrameInfo.pVirAddrStd[0];
 					colorG = (char*)stFrameInfo.pVirAddrStd[1];
 					colorB = (char*)stFrameInfo.pVirAddrStd[2];
-					lc_rgb_convert(colorR, colorG, colorB, gDmsAlgorithemImgList[index], 384, 384);
-					gDmsImgIndexTail++;		
+					printf("DMS deal channel4_handler!! \n");
+					
+					lc_rgb_convert(colorR, colorG, colorB, gDmsAlgorithemImgList[index], 640, 352);
+					gDmsImgIndexTail++;	
 					logd_lc("post frame dms %x", gDmsAlgorithemImgList[index]);
 					sem_post(&semAlgorithem);
 				}
@@ -1134,12 +1138,15 @@ void *vc_channel4_handler(void *arg)
 #ifdef LC_HAVE_ALGORITHEM	
 				if(gAdasImgIndexTail==gAdasImgIndexHead && Adas_Switch)
 				{
+					
 					char* colorR, *colorG, *colorB;
 					int index = gAdasImgIndexTail&0x03;
 					colorR = (char*)stFrameInfo.pVirAddrStd[0];
 					colorG = (char*)stFrameInfo.pVirAddrStd[1];
 					colorB = (char*)stFrameInfo.pVirAddrStd[2];
-					lc_rgb_convert(colorR, colorG, colorB, gAdasAlgorithemImgList[index], 384, 384);
+					printf("ADAS deal channel4_handler!! \n");
+					
+					lc_rgb_convert(colorR, colorG, colorB, gAdasAlgorithemImgList[index], 640, 352);
 					gAdasImgIndexTail++;		
 					logd_lc("post frame adas %x", gAdasAlgorithemImgList[index]);
 					sem_post(&semAlgorithem);
@@ -1488,7 +1495,7 @@ VIM_S32 TestView(sample_config *config)
 			if(! ((mstManInfo.u32ChnOutMask[u32GrpID]>>u32ChnId) & 0x1))
 				continue;			
 			/*
-			*将ini配置文件的Group Channel参数全部复制到stChnAttr中
+			*??ini?????????Group Channel????????????stChnAttr??
 			*/
 			memcpy(&stChnAttr, &chnOutAttr[u32GrpID][u32ChnId], sizeof(VIM_CHN_CFG_ATTR_S));
 
@@ -1515,7 +1522,7 @@ VIM_S32 TestView(sample_config *config)
             {
                 VIM_CHAR sTStr[128] = {0};
                 sprintf(sTStr, "%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", 0xd6, 0xd0, 0xd0, 0xc7, 0xce, 0xa2, 
-                        0x41, 0x49, 0xD0, 0xBE, 0xC6, 0xAC, 0x2d,0x2d, 0xcd, 0xa8, 0xb5, 0xc0); /*GB2312编码*/
+                        0x41, 0x49, 0xD0, 0xBE, 0xC6, 0xAC, 0x2d,0x2d, 0xcd, 0xa8, 0xb5, 0xc0); /*GB2312????*/
 
                 VIM_MPI_RGN_Init(u32GrpID);
                 dvr_DO_REGION_OSD_Init(u32GrpID, u32ChnId, stChnAttr.u16Width, stChnAttr.u16Height, sTStr, 1);
@@ -1804,16 +1811,16 @@ step1:
 
 VIM_S32 vc_vpss_group1_init(void)
 {
-    /*1. 使能VPSS模块, , 设置VPSS GROUP组input通道参数*/
+    /*1. ???VPSS???, , ????VPSS GROUP??input???????*/
     VIM_S32 s32Ret = VIM_MPI_VPSS_EnableDev();
     ASSERT_RET_RETURN(s32Ret);
 
-    /*2. 创建VPSS GROUP, 初始化VPSS GROUP组参数, 初始化VPSS GROUP组输入通道属性*/
+    /*2. ????VPSS GROUP, ?????VPSS GROUP?????, ?????VPSS GROUP?????????????*/
     VIM_VPSS_GROUP_ATTR_S vpssGrpAttr = {0};
-    vpssGrpAttr.u32GrpId                        = PLAYBACK_GROUP_ID;  /*VPSS GROUP序列号*/
+    vpssGrpAttr.u32GrpId                        = PLAYBACK_GROUP_ID;  /*VPSS GROUP???к?*/
     vpssGrpAttr.u32GrpAutoStart                 = VIM_FALSE;
     vpssGrpAttr.u32GrpStatus                    = E_VPSS_GROUP_STATIC;
-    vpssGrpAttr.u32GrpDataSrc                   = PLAYBACK_VPSS_INPUT_CHAN;       /*重要参数: 对应3种输入方式VPSS_INPUT_0/1/2*/
+    vpssGrpAttr.u32GrpDataSrc                   = PLAYBACK_VPSS_INPUT_CHAN;       /*???????: ???3???????VPSS_INPUT_0/1/2*/
     vpssGrpAttr.enInputType                     = E_INPUT_TYPE_MEM;
     vpssGrpAttr.u32ViIsVpssBuf                  = VIM_FALSE;
     vpssGrpAttr.stGrpInput.u16Width             = 1920;
@@ -1832,12 +1839,12 @@ VIM_S32 vc_vpss_group1_init(void)
     s32Ret = VIM_MPI_VPSS_CreatGrp(&vpssGrpAttr);
     ASSERT_RET_RETURN(s32Ret);
 
-    /*3. 设置VPSS GROUP组输入通道属性*/
+    /*3. ????VPSS GROUP?????????????*/
     s32Ret = VIM_MPI_VPSS_SetGrpInAttr(vpssGrpAttr.u32GrpId, &vpssGrpAttr);
     ASSERT_RET_RETURN(s32Ret);
 
 
-    /*4. 设置VPSS GROUP输出通道参数*/
+    /*4. ????VPSS GROUP??????????*/
     VIM_CHN_CFG_ATTR_S chnOutAttr = {0};
     chnOutAttr.u16Width         = 1920;
     chnOutAttr.u16Height        = 1080;
@@ -1865,7 +1872,7 @@ VIM_S32 vc_vpss_start_chn(void)
 {
     VIM_S32 ret = VIM_FAILURE;
 
-    /*5. 使能通道*/
+    /*5. ??????*/
     ret = VIM_MPI_VPSS_EnableChn(PLAYBACK_GROUP_ID, PLAYBACK_CHAN_ID);
     if (VIM_SUCCESS != ret)
     {
@@ -1873,7 +1880,7 @@ VIM_S32 vc_vpss_start_chn(void)
         return ret;
     }
 
-    /*6. 启动通道*/
+    /*6. ??????*/
     ret = VIM_MPI_VPSS_StartChn(PLAYBACK_GROUP_ID, PLAYBACK_CHAN_ID);
     if (VIM_SUCCESS != ret)
     {
@@ -1889,7 +1896,7 @@ VIM_S32 vc_vpss_group1_exit(void)
 {
     VIM_S32 ret = VIM_FAILURE;
 
-    /*如果修改 GROUP 属性参数，必须先 GET 出来再修改*/
+    /*?????? GROUP ??????????????? GET ?????????*/
     VIM_VPSS_GROUP_ATTR_S vpssGrpAttr = {0};
     ret = VIM_MPI_VPSS_GetGrpAttr(PLAYBACK_GROUP_ID, &vpssGrpAttr);
     ASSERT_RET_RETURN(ret);
@@ -1906,7 +1913,7 @@ VIM_S32 vc_vpss_group1_exit(void)
     printf("vpss DestroyGrp group %d ok.\n", PLAYBACK_GROUP_ID);
     ASSERT_RET_RETURN(ret);
 
-    /*设备不关闭, 录像还需要使用vpss*/
+    /*?豸?????, ?????????vpss*/
 //    VIM_MPI_VPSS_DisableDev();
 //    CHECK_VPSS_RET_RETURN(ret);
 //    printf("vpss DisableDev ok.\n");
@@ -1915,7 +1922,7 @@ VIM_S32 vc_vpss_group1_exit(void)
 }
 
 
-/*每秒钟上报一次*/
+/*???????????*/
 int OnPlayerStatus(int handle, int event, void *data, void *userData)
 {
     if (event == PLAY_PROG_EVNET)
@@ -1958,7 +1965,7 @@ void *vc_player_handler(void *arg)
     setStride.weight = 1920;
     setStride.voDev = VO_DEV_HD;
     setStride.LayerId = Layer_A;
-//    usleep(5*33*1000);      /*不延迟的话, 在预览切换到回放时通道1会短暂出现串屏*/
+//    usleep(5*33*1000);      /*???????, ??????л??????????1???????????*/
     VIM_MPI_VO_SetImageSize(&setStride, VO_DEV_HD);
 
     VIM_MPI_VO_SetMultiMode(Multi_None, MULTI_CONTROL_AUTO, NULL, NULL);
@@ -1969,7 +1976,7 @@ void *vc_player_handler(void *arg)
     MultiChanBind Vo_MultiChanInfo = {0};
     Vo_MultiChanInfo.width = 1920;
     Vo_MultiChanInfo.high = 1080;
-    Vo_MultiChanInfo.chan = 0;      /*表示从VO模块0通道输出*/
+    Vo_MultiChanInfo.chan = 0;      /*?????VO???0??????*/
     Vo_MultiChanInfo.workMode = Multi_None;
 #else
     mainPreview = 5;
@@ -1979,7 +1986,7 @@ void *vc_player_handler(void *arg)
 
     while ((VIM_FALSE == play_Exit) && (VIM_FALSE == View_Exit))
     {
-        /*从VPSS第0组第0个通道获取DCVI通道图像数据*/
+        /*??VPSS??0???0????????DCVI??????????*/
         ret = VIM_MPI_VPSS_GetFrame(1, 4, &stFrameInfo, 3000);
         if(0 != ret)
         {
@@ -1989,7 +1996,7 @@ void *vc_player_handler(void *arg)
         }
         else
         {
-            /*记录当前帧数据属于哪个DCVI通道*/
+            /*??????????????????DCVI???*/
             Vo_MultiChanInfo.codeAddr_y = (char *)stFrameInfo.pPhyAddrStd[0];
             Vo_MultiChanInfo.codeAddr_uv = (char *)stFrameInfo.pPhyAddrStd[1];
         }
@@ -2023,7 +2030,7 @@ void *vc_player_handler(void *arg)
         usleep(1);
     }
 
-    /*退出后要还原到开始时的分块模式*/
+    /*?????????????????????*/
     printf("multimode  = %d.\n", mainPreview);
     if (0 == mainPreview)
     {
@@ -2064,7 +2071,7 @@ int GetRecFullPath(int ch, int event, char *fullpath)
         return -1;
     }
 
-    if (0x10 == event)  /*紧急录像路径*/
+    if (0x10 == event)  /*??????·??*/
     {
         snprintf(file_path, 128, "%s/alarm_ch%d_", ALARM_DIR_PATH, ch + 1);
         strcat(file_path, date_tag);
@@ -2129,7 +2136,7 @@ long long comm_getDiskFreeSpace(const char *path)
     struct statfs diskStatfs;
     if (statfs(path, &diskStatfs) >= 0)
     {
-        /*空闲块数*每块字节数/(1024*1024)=剩余空间MB*/
+        /*???п???*????????/(1024*1024)=?????MB*/
         freeSpace = (((long long)diskStatfs.f_bsize * (long long)diskStatfs.f_bfree) / (long long)1048576);
     }
 
@@ -2137,7 +2144,7 @@ long long comm_getDiskFreeSpace(const char *path)
     return freeSpace;
 }
 
-/*找出并删除一个最早的录像文件*/
+/*??????????????????????*/
 int delOldRecordFile()
 {
 #define PATH_MAX        (512)
@@ -2164,7 +2171,7 @@ int delOldRecordFile()
         snprintf(recordDirPath, PATH_MAX, "%s%d", CHANNEL_DIR_PATH, i + 1);
 //        printf("LINE = %d, recordDirPath = %s, i = %d\n", __LINE__, recordDirPath, i);
 
-        /*找到最早的日期文件夹*/
+        /*?????????????????*/
         if ((ptr_DIR = opendir(recordDirPath)) != NULL)
         {
             count = 0;
@@ -2184,14 +2191,14 @@ int delOldRecordFile()
                 {
                     closedir(ptr_DIR);
                     printf("get path status failed, errno = %s.\n", strerror(errno));
-                    /*是否需要删除*/
+                    /*?????????*/
                     continue;
                 }
 
                 if (S_ISDIR(stat_info.st_mode))
                 {
 //                    printf("LINE = %d, fullDirPath = %s, oldDirPath = %s\n", __LINE__, fullDirPath, oldDirPath);
-                    /*用字符串比较还是文件时间来判断?*/
+                    /*??????????????????????ж??*/
                     if (0 == strlen(oldDirPath))
                     {
                         strncpy(oldDirPath, fullDirPath, PATH_MAX);
@@ -2219,7 +2226,7 @@ int delOldRecordFile()
             continue;
         }
 
-        /*某个通道没有录像日期文件夹*/
+        /*?????????????????????*/
         if (count <= 0)
         {
             printf("not found folder, LINE = %d, count = %d, dir = %s is empty.\n", __LINE__, count, recordDirPath);
@@ -2227,7 +2234,7 @@ int delOldRecordFile()
         }
 
 //        printf("LINE = %d, oldDirPath = %s\n", __LINE__, oldDirPath);
-        /*找出最早的录像文件*/
+        /*??????????????*/
         if ((ptr_DIR = opendir(oldDirPath)) != NULL)
         {
             count = 0;
@@ -2280,7 +2287,7 @@ int delOldRecordFile()
             continue;
         }
 
-        /*需要判断找到的路径是否为空, 如果为空, 删除重新查找*/
+        /*????ж??????·????????, ??????, ??????2???*/
         if (count <= 0)
         {
             printf("not found mp4 file, LINE = %d, count = %d, dir = %s is empty, delete...\n", __LINE__, count, oldDirPath);
@@ -2290,12 +2297,12 @@ int delOldRecordFile()
             continue;
         }
 
-        /*把搜索到的最早录像文件路径保存起来*/
+        /*????????????????????·??????????*/
         strncpy(&delFilePath[i][0], oldFilePath, PATH_MAX);
 //        printf("LINE = %d, delFilePath[%d][0] = %s, oldDirPath = %s.\n", __LINE__, i, &delFilePath[i][0], oldFilePath);
     }
 
-    /*在4个文件里再找出最早的录像文件*/
+    /*??4???????????????????????*/
     int prefix_len = strlen(CHANNEL_DIR_PATH) + 2;
     for (i = 0, num = 0; i < 4; i++)
     {
@@ -2309,7 +2316,7 @@ int delOldRecordFile()
 
         if (S_ISREG(stat_info.st_mode))
         {
-            /*按文件名(日期时间)来比较*/
+            /*???????(???????)?????*/
             snprintf(tempBuf, BUFF_SIZE, "%s", &delFilePath[i][0] + prefix_len);
 
 //            printf("LINE = %d, i = %d, fileCreateTime = %s, tempBuf = %s\n", __LINE__, i, fileCreateTime, tempBuf);
@@ -2371,7 +2378,7 @@ int delOldRecordFile()
     return 0;
 }
 
-/*所有有效通道开始录像*/
+/*??????Ч?????????*/
 VIM_S32 vc_record_start(void)
 {
     VIM_S32 ret = -1;
@@ -2403,7 +2410,7 @@ VIM_S32 vc_record_start(void)
     return ret;
 }
 
-/*所有通道停止录像*/
+/*????????????*/
 VIM_S32 vc_record_stop(void)
 {
     VIM_S32 ret = -1;
@@ -2427,7 +2434,7 @@ void *detect_thread(void *arg)
 {
     (void)arg;
     int lNotify;
-    sleep(5);   /*5秒延迟, 等待VimVencChStart()完成*/
+    sleep(5);   /*5?????, ???VimVencChStart()???*/
 
     char path[64] = {0};
     strncpy(path, "/sys/devices/virtual/misc/nvp6158c/ahd_input", sizeof(path));
@@ -2440,7 +2447,7 @@ void *detect_thread(void *arg)
     }
 
 
-    /*检测dcvi实时状态*/
+    /*???dcvi????*/
     int ret = -1;
     unsigned char value[5] = {0};
     unsigned char pos[4] = {4, 6, 0, 2};  /*0xef, 0xbf, 0xfe, 0xfb*/
@@ -2494,7 +2501,7 @@ void *detect_thread(void *arg)
 					{
 						logd_lc("insert pre:%x, cur:%x", preStatus, cStatus);
 						vc_message_send(ENU_LC_DVR_CAM_DEV_ERROR, cStatus, NULL, NULL);
-						mCameraLossDetect = 0; /**似乎检测程序不稳定，插着摄像头状态也会变化，所以做个10秒延时检测**/
+						mCameraLossDetect = 0; /**????????????????????????????仯??????????10????????**/
 					}					
 					
 					vc_set_record_status(cStatus);
@@ -2513,7 +2520,7 @@ void *detect_thread(void *arg)
 					cStatus &= ~(1<<i);
 					
 					if((cStatus!=0x0f)&&(preStatus==0x0f))
-					{	/**摄像头前一状态是正常的，当前检测到丢失状态则报错**/
+					{	/**?????????????????????????????????**/
 						logd_lc("miss pre:%x, cur:%x", preStatus, cStatus);
 						mCameraLossDetect = 25*10;
 					}
@@ -2527,10 +2534,10 @@ void *detect_thread(void *arg)
 #endif
             }
 
-            /*DCVI通道有变化需要通知到GUI*/
+            /*DCVI????б仯???????GUI*/
         }
 #ifdef VIM_RECORD_PATH
-        /*判断当前剩余存储空间是否小于指定值(200MB)*/
+        /*?ж??????洢??????С??????(200MB)*/
         int loop = 0;
         int freeSize = comm_getDiskFreeSpace(VIDEO_DIR_PATH);
         if (freeSize >= 2000)
@@ -2575,7 +2582,7 @@ int OnStart(void)
     }
     else
     {
-        ret = 1;    /*拒绝请求，限制同时请求数量，目前同时间只支持一路rtsp请求*/
+        ret = 1;    /*??????????????????????????????????·rtsp????*/
     }
     pthread_mutex_unlock(&g_rtspMutex);
 #endif
@@ -2667,7 +2674,7 @@ void *mediaPlay_thread(void *arg)
 	while(g_player_flag)
 	{
 #ifndef PACK_H265
-		/*SVAC录像回放时需要停止录像*/
+		/*SVAC??????????????*/
 		vc_record_stop();
 #endif
 
@@ -2684,11 +2691,11 @@ void *mediaPlay_thread(void *arg)
 			vc_record_start();
 #endif
 
-			/*发送消息让GUI退出播放界面*/
+			/*?????????GUI??????????*/
 			continue;
 		}
 
-		/*发送录像文件时长到GUI*/
+		/*???????????????GUI*/
 		if (handle > 0)
 		{
 			g_handle = handle;
@@ -2707,10 +2714,10 @@ void *mediaPlay_thread(void *arg)
 		}
 
 		VoModInfo vo;
-		vo.type = 0;				//绑定vpss模块
-		vo.devId = 1;				//vpss模块的groupId
-		vo.chId = 1;				//vpss模块group对应的输入通道chid
-		vo.vFmt = PIXEL_FMT_NV12;	//vpss模块group对应的输入格式
+		vo.type = 0;				//??vpss???
+		vo.devId = 1;				//vpss????groupId
+		vo.chId = 1;				//vpss???group????????????chid
+		vo.vFmt = PIXEL_FMT_NV12;	//vpss???group???????????
 
 #ifdef PACK_H265
 		s32Ret = VimPlayerStart(handle, &vo, OnPlayerStatus, NULL, NULL);
@@ -2728,7 +2735,7 @@ void *mediaPlay_thread(void *arg)
 			continue;
 		}
 
-		//这里必须等待播放器开始事件后才能启动后面的vpss绑定vo或者vpss_feed_vo的线程
+		//??????????????????????????????????vpss??vo????vpss_feed_vo?????
 		while (playStartEvent == 0 && play_Exit == VIM_FALSE)
 		{
 			usleep(2000);
@@ -2827,7 +2834,7 @@ void *mdvr_thread_handle(void *arg)
 	}
 #ifdef LC_HAVE_ALGORITHEM
 
-	
+	/*
 	gDmsAlgorithemImgList[0] = (char*)malloc(LC_ALGORITEM_SIZE*LC_ALGORITEM_SIZE*3*8);
 	gAdasAlgorithemImgList[0] = gDmsAlgorithemImgList[0]+LC_ALGORITEM_SIZE*LC_ALGORITEM_SIZE*3*4;
 	for(int i=1; i<4; i++)
@@ -2835,9 +2842,8 @@ void *mdvr_thread_handle(void *arg)
 		gDmsAlgorithemImgList[i] = gDmsAlgorithemImgList[i-1]+LC_ALGORITEM_SIZE*LC_ALGORITEM_SIZE*3;
 		gAdasAlgorithemImgList[i] = gAdasAlgorithemImgList[i-1]+LC_ALGORITEM_SIZE*LC_ALGORITEM_SIZE*3;	
 	}
+	*/
 	
-	
-	/*
 	gDmsAlgorithemImgList[0] = (char*)malloc(LC_ALGORITEM_SIZE_ADAS_width*LC_ALGORITEM_SIZE_ADAS_height*3*8);
 	gAdasAlgorithemImgList[0] = gDmsAlgorithemImgList[0]+LC_ALGORITEM_SIZE_ADAS_width*LC_ALGORITEM_SIZE_ADAS_height*3*4;
 	for(int i=1; i<4; i++)
@@ -2845,7 +2851,6 @@ void *mdvr_thread_handle(void *arg)
 		gDmsAlgorithemImgList[i] = gDmsAlgorithemImgList[i-1]+LC_ALGORITEM_SIZE_ADAS_width*LC_ALGORITEM_SIZE_ADAS_height*3;
 		gAdasAlgorithemImgList[i] = gAdasAlgorithemImgList[i-1]+LC_ALGORITEM_SIZE_ADAS_width*LC_ALGORITEM_SIZE_ADAS_height*3;	
 	}
-	*/
 
 	gDmsImgIndexHead = 0;
 	gDmsImgIndexTail = 0;
@@ -2855,7 +2860,8 @@ void *mdvr_thread_handle(void *arg)
 	mDmsFrameRate = 0;
 	mAdasFrameRate = 0;
 
-	//鍒濆鍖栨ā鍨?	if(Dms_Switch)
+	//初始化模型
+	if(Dms_Switch)
 		{
 			lc_dvr_bridge_dms_initial();
 		}
@@ -2876,7 +2882,7 @@ void *mdvr_thread_handle(void *arg)
     if (0 != access(ALARM_DIR_PATH, F_OK))
         mkdir(ALARM_DIR_PATH, 0644);
 #endif
-    /*读取config.ini并得到录像加密密码*/
+    /*???config.ini???????????????*/
     char *pwd = NULL;
     dictionary *ini = NULL;
     ini = iniparser_load("/system/config.ini");
@@ -2908,7 +2914,7 @@ void *mdvr_thread_handle(void *arg)
 	printf("vo_config_file = %s \r\n",config.vo_config.name[0]);
 	printf("vpss_config_file = %s \r\n",config.vpss_config.name[0]);
 
-    /*录像SDK初始化*/
+    /*???SDK?????*/
 #ifdef VIM_RECORD_PATH	
 #ifdef PACK_H265
     s32Ret = VimRecordInit(".", GetRecFullPath, NULL, 0, NULL, NULL);
@@ -2960,7 +2966,7 @@ void *mdvr_thread_handle(void *arg)
 	}
     recInfo.vInfo.frameRate = 25;
 	recInfo.aFmt = AV_FMT_AAC;
-	recInfo.aInfo.sampleRate = 16000;//16000; /**48000 播放不正，速度过快**/
+	recInfo.aInfo.sampleRate = 16000;//16000; /**48000 ???????????????**/
 	recInfo.aInfo.channel = 1;
 	recInfo.aInfo.sampleFmt = SAMPLE_BIT_S16_LE;	
 #ifdef PACK_H265
@@ -2976,7 +2982,7 @@ void *mdvr_thread_handle(void *arg)
 		SAMPLE_PRT(" DO_UBINDER_Exit failed 0x%x\n", s32Ret);
 	}
 	
-    /*AHD摄像头侦测线程*/
+    /*AHD???????????*/
     pthread_t ntid;
     err = pthread_create(&ntid, NULL, detect_thread, NULL);
     if (0 != err)
@@ -2986,7 +2992,7 @@ void *mdvr_thread_handle(void *arg)
     }
     pthread_detach(ntid);
 
-    /*OSD线程*/
+    /*OSD???*/
 #ifdef OSD_ENABLE
     pthread_t pid;
 	sleep(1);
@@ -3012,7 +3018,7 @@ sys_deinit:
 	SAMPLE_LEAVE();
 	
 #ifdef LC_HAVE_ALGORITHEM
-	// 鍙嶅垵濮嬪寲妯″瀷
+	// 反初始化模型
 	if(Dms_Switch)
 		{
 			lc_dvr_bridge_dms_unInitial();

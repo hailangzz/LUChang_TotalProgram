@@ -121,6 +121,10 @@ int DMS_infer(const ImageData* data, zxw_object_result *YoloDetectResult,DMSDete
       
       cv::Mat image(height, width, CV_8UC3, data->rgb_data);
       
+      //尺寸转换
+      cv::Mat resizedImage;
+      cv::resize(image, resizedImage, cv::Size(384, 384));
+      
       // 保存图像
       //cv::imwrite("/tmp/"+std::to_string(number) + ".jpg", image);
   
@@ -128,33 +132,33 @@ int DMS_infer(const ImageData* data, zxw_object_result *YoloDetectResult,DMSDete
       //number++;
       //std::cout << "the program will enter ZXW_DMS_Detect() !"<< std::endl;
       u_char *virt_base_addr;                        //暂时不支持yuv输入， 后续支持
-      ZXW_DMS_Detect(image, virt_base_addr, YoloDetectResult, dms_detect_result);
+      ZXW_DMS_Detect(resizedImage, virt_base_addr, YoloDetectResult, dms_detect_result);
       
       if(dms_detect_result->event_calling == 1)
       {
         frame_image_number+=1;
-        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_calling" +".jpg", image);}
+        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_calling" +".jpg", resizedImage);}
         
       if(dms_detect_result->event_eyeclose == 1)
       {
         frame_image_number+=1;
-        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_eyeclose" +".jpg", image);}
+        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_eyeclose" +".jpg", resizedImage);}
       if(dms_detect_result->event_glass == 1)
       {
         frame_image_number+=1;
-        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_glass" +".jpg", image);}
+        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_glass" +".jpg", resizedImage);}
       if(dms_detect_result->event_mask == 1)
       {
         frame_image_number+=1;
-        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_mask" +".jpg", image);}
+        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_mask" +".jpg", resizedImage);}
       if(dms_detect_result->event_smoke == 1)
       {
         frame_image_number+=1;
-        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_smoke" +".jpg", image);}
+        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_smoke" +".jpg", resizedImage);}
       if(dms_detect_result->event_yawn == 1)
       {
         frame_image_number+=1;
-        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_yawn" +".jpg", image);}
+        cv::imwrite("/tmp/"+std::to_string(frame_image_number) + "_event_yawn" +".jpg", resizedImage);}
       //std::cout << "ZXW_DMS_Detect() is finished !"<< std::endl;
       /*
       
