@@ -1,0 +1,6 @@
+python classy_track.py --source D:\LuChang_Program_Total\ADAS_DMS项目\项目测试数据集\夜间驾驶样本/videoplayback_quick.mp4 --view-img
+
+python classy_track.py --source E:\Pycharm_Workspace\LUChang_TotalProgram\classy-sort-yolov5-main\assets\ribendongjingjietou_11101835.jpg --view-img
+
+
+

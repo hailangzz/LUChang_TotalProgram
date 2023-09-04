@@ -1,0 +1,4 @@
+
+# 导出模型
+    python3 ./export_onnx.py --height 640 --width 640
+    python3 ./export_onnx.py --height 620 --width 620
