@@ -41,7 +41,7 @@ model = onnx.load(args.onnx_model)
 onnx.checker.check_model(model)
 
 print("====> Simplifying...")
-model_opt = onnxsim.simplify(args.onnx_model)
+model_opt,check = onnxsim.simplify(args.onnx_model)
 # print("model_opt", model_opt)
 onnx.save(model_opt, args.onnx_model_sim)
 print("onnx model simplify Ok!")
