@@ -1,0 +1,449 @@
+#include<opencv2/opencv.hpp>
+#include<iostream>
+
+using namespace cv;
+using namespace std;
+
+int read_image()
+{
+	Mat image;   //创建一个空图像image
+	image = imread("E://20230606135741.png", 0);  //读取文件夹中的图像 灰度读取
+	image = imread("E://20230606135741.png");  //读取文件夹中的图像 真实读取
+
+
+	//检测图像是否加载成功
+	if (image.empty())  //检测image有无数据，无数据 image.empty()返回 真
+	{
+		cout << "Could not open or find the image" << endl;
+		return -1;
+	}
+
+	namedWindow("IMAGE");  //创建显示窗口，不加这行代码，也能显示，默认窗口大小不能改变
+	imshow("IMAGE", image);  //在窗口显示图像
+
+	imwrite("D:\\1.png", image); //保存图像为png格式，文件名称为1
+	cout << "图像的行数为： " << image.rows << endl;		// 获取图像的高度（行数)
+	cout << "图像的列数为： " << image.cols << endl;		// 获取图像的宽度（列数)
+	cout << "图像的通道数为： " << image.channels() << endl;		// 获取图像的通道数（彩色 3； 灰度 1)
+	cout << "图像的尺寸为： " << image.size << endl;		// 获取图像的尺寸（行*列)
+
+
+	waitKey(0);  //暂停，保持图像显示，等待按键结束
+	return 0;
+}
+
+int cut_image()
+{
+	Mat image1 = imread("E://20230606135741.png");  //读取图像；
+	if (image1.empty())
+	{
+		cout << "读取错误" << endl;
+		return -1;
+	}
+	imshow("image1", image1);  //显示图像；
+	Mat imageROI(image1, Rect(50, 50, 100, 100));  //定义感兴趣区域  50,50位置，裁剪100*100大小
+	imshow("image2", imageROI);
+	imwrite("D:\\imageROI_cut.png", imageROI); //保存图像为png格式，文件名称为1
+	waitKey(0);  //暂停，保持图像显示，等待按键结束
+	return 0;
+}
+
+int concat_image()
+{
+	Mat image1 = imread("E://20230606135741.png");  //读取图像；
+	if (image1.empty())
+	{
+		cout << "读取错误" << endl;
+		return -1;
+	}
+	Mat srcmcopy;
+	
+	image1.copyTo(srcmcopy);
+
+	// 水平堆叠图像
+	cv::Mat stacked_image;
+	cv::vconcat(image1, srcmcopy, stacked_image);
+
+	// 显示堆叠后的图像
+	cv::imshow("Stacked Image", stacked_image);
+	cv::waitKey(0);
+
+	imwrite("D:\\image_stacked_image.png", stacked_image); //保存图像为png格式，文件名称为1
+	waitKey(0);  //暂停，保持图像显示，等待按键结束
+	return 0;
+}
+
+int background()
+{
+	Mat image1 = imread("E://20230606135741.png");  //读取图像；
+	if (image1.empty())
+	{
+		cout << "读取错误" << endl;
+		return -1;
+	}
+	Mat imageROI(image1, Rect(50, 50, 100, 100));  //定义感兴趣区域  50,50位置，裁剪100*100大小
+	// 将 overlay 图像复制到 background 图像上
+	int x = 500; // 你可以根据需要调整位置
+	int y = 600;
+	imageROI.copyTo(image1(cv::Rect(x, y, imageROI.cols, imageROI.rows)));
+	imwrite("D:\\image_background.png", image1); //保存图像为png格式，文件名称为1
+	cv::imshow("image_background", image1);
+	waitKey(0);  //暂停，保持图像显示，等待按键结束
+	return 0;
+
+}
+
+int resize_image()
+{
+	Mat image = imread("E://20230606135741.png");  //读取图像；
+	// 设置新的图像大小
+	int newWidth = 640;  // 新的宽度
+	int newHeight = 480; // 新的高度
+
+	// 使用 resize 函数调整图像大小
+	cv::Mat resizedImage;
+	cv::resize(image, resizedImage, cv::Size(newWidth, newHeight));
+
+	// 显示调整大小后的图像
+	cv::imshow("Resized Image", resizedImage);
+	cv::waitKey(0);
+
+	return 0;
+}
+
+int rectangle_image()
+{
+	Mat image = imread("E://20230606135741.png");  //读取图像；
+	// 定义矩形的位置和大小
+	cv::Point topLeft(100, 100); // 左上角坐标
+	cv::Point bottomRight(300, 300); // 右下角坐标
+
+	// 设置矩形的颜色和线宽
+	cv::Scalar color(0, 0, 255); // BGR颜色 (蓝色)
+	int thickness = 2; // 线宽度
+
+	// 在图像上绘制矩形框
+	cv::rectangle(image, topLeft, bottomRight, color, thickness);
+
+	// 显示带有矩形框的图像
+	cv::imshow("Image with Rectangle", image);
+	cv::waitKey(0);
+
+	return 0;
+}
+
+int plat_point()
+{
+	// 创建一个空白图像
+	cv::Mat image(500, 500, CV_8UC3, cv::Scalar(255, 255, 255)); // 白色背景
+
+	// 定义要绘制的点的坐标
+	cv::Point center(250, 250); // 点的中心坐标
+	int radius = 10; // 点的半径
+
+	// 设置点的颜色
+	cv::Scalar color(0, 0, 255); // BGR颜色 (红色)
+
+	// 在图像上绘制点
+	cv::circle(image, center, radius, color, -1); // -1 表示填充点
+
+	// 显示带有绘制点的图像
+	cv::imshow("Image with Point", image);
+	cv::waitKey(0);
+
+	return 0;
+}
+
+int plat_more_point()
+{
+	
+	Mat image = imread("E://20230606135741.png");  //读取图像；
+
+	// 定义要绘制的点的坐标
+	std::vector<cv::Point> points;
+	points.push_back(cv::Point(100, 100));
+	points.push_back(cv::Point(200, 200));
+	points.push_back(cv::Point(300, 300));
+	points.push_back(cv::Point(400, 400));
+
+	// 设置点的颜色
+	cv::Scalar color(0, 0, 255); // BGR颜色 (红色)
+
+	// 在图像上绘制多个点
+	for (const cv::Point& point : points) {
+		cv::circle(image, point, 5, color, -1); // -1 表示填充点
+	}
+
+	// 显示带有绘制点的图像
+	cv::imshow("Image with Points", image);
+	cv::waitKey(0);
+
+	return 0;
+}
+
+int plat_line_image()
+{
+	// 创建一个空白图像，白色背景
+	cv::Mat image(500, 500, CV_8UC3, cv::Scalar(255, 255, 255));
+
+	// 定义黑色线的起始点和终止点坐标
+	cv::Point startPoint1(100, 100);
+	cv::Point endPoint1(100, 400);
+
+	cv::Point startPoint2(400, 200);
+	cv::Point endPoint2(400, 500);
+
+	// 设置线的颜色
+	cv::Scalar color(0, 0, 0); // BGR颜色 (黑色)
+
+	// 在图像上绘制黑色线
+	cv::line(image, startPoint1, endPoint1, color, 5); // 2 表示线宽度
+	cv::line(image, startPoint2, endPoint2, color, 5);
+
+	imwrite("D:\\image_line.png", image); //保存图像为png格式，文件名称为1
+	// 显示带有绘制线的图像
+	cv::imshow("Image with Lines", image);
+	cv::waitKey(0);
+
+	return 0;
+}
+
+int check_line()
+{
+	// 读取图像
+	cv::Mat image = cv::imread("D:\\image_line.png");
+
+	// 检查图像是否成功加载
+	if (image.empty()) {
+		std::cerr << "Error: Could not load image." << std::endl;
+		return 1;
+	}
+
+	// 将图像转换为灰度图像
+	cv::Mat grayImage;
+	cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+
+	// 使用 Canny 边缘检测算法检测边缘
+	cv::Mat edges;
+	cv::Canny(grayImage, edges, 50, 150, 3);
+
+	// 使用霍夫变换检测直线
+	std::vector<cv::Vec2f> lines;
+	cv::HoughLines(edges, lines, 1, CV_PI / 180, 100);
+
+	// 存储中心点坐标的向量
+	std::vector<cv::Point> centerPoints;
+
+	// 绘制检测到的直线
+	for (size_t i = 0; i < lines.size(); ++i) {
+		float rho = lines[i][0];
+		float theta = lines[i][1];
+		double a = cos(theta);
+		double b = sin(theta);
+		double x0 = a * rho;
+		double y0 = b * rho;
+		cv::Point pt1(cvRound(x0 + 1000 * (-b)), cvRound(y0 + 1000 * (a)));
+		cv::Point pt2(cvRound(x0 - 1000 * (-b)), cvRound(y0 - 1000 * (a)));
+		std::cout << "Center of Line " << i + 1 << ": (" << pt1.x <<":" << pt1.y << std::endl;
+		std::cout << "Center of Line " << i + 1 << ": (" << pt2.x <<":" << pt2.y << std::endl;
+
+		//cv::line(image, pt1, pt2, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
+		cv::line(image, pt1, pt2, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
+
+		// 计算中心点坐标
+		cv::Point center((pt1.x + pt2.x) / 2, (pt1.y + pt2.y) / 2);
+		// 存储中心点坐标
+		centerPoints.push_back(center);
+		// 在图像上绘制中心点
+		cv::circle(image, center, 5, cv::Scalar(255, 0, 0), -1); // 蓝色点
+	}
+
+	// 显示带有检测到的直线的图像
+	cv::imshow("Image with Lines Detected", image);
+	cv::waitKey(0);
+
+	// 输出中心点坐标
+	for (size_t i = 0; i < centerPoints.size(); ++i) {
+		std::cout << "Center of Line " << i + 1 << ": (" << centerPoints[i].x << ", " << centerPoints[i].y << ")" << std::endl;
+	}
+
+	return 0;
+}
+
+int plat_line_real_size()
+{
+	// 读取图像
+	cv::Mat image = cv::imread("D:\\image_line.png");
+
+	// 检查图像是否成功加载
+	if (image.empty()) {
+		std::cerr << "Error: Could not load image." << std::endl;
+		return 1;
+	}
+
+	// 将图像转换为灰度图像
+	cv::Mat grayImage;
+	cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+
+	// 使用 Canny 边缘检测算法检测边缘
+	cv::Mat edges;
+	cv::Canny(grayImage, edges, 50, 150, 3);
+
+	// 使用霍夫变换检测直线
+	std::vector<cv::Vec2f> lines;
+	cv::HoughLines(edges, lines, 1, CV_PI / 180, 100);
+
+	// 存储中心点坐标的向量
+	std::vector<cv::Point> centerPoints;
+
+	// 绘制检测到的直线
+	for (size_t i = 0; i < lines.size(); ++i) {
+		float rho = lines[i][0];
+		float theta = lines[i][1];
+		double a_actual = cos(theta);
+		double b_actual = sin(theta);
+		double x0_actual = a_actual * rho;
+		double y0_actual = b_actual * rho;
+
+		// 计算直线的两个端点
+		cv::Point pt1_actual(cvRound(x0_actual), cvRound(y0_actual));
+		cv::Point pt2_actual(cvRound(x0_actual + 1000 * (-b_actual)), cvRound(y0_actual + 1000 * (a_actual)));
+
+		// 绘制直线在原始图像上
+		cv::line(image, pt1_actual, pt2_actual, cv::Scalar(0, 0, 255), 2);
+
+	}
+
+	// 显示带有检测到的直线的图像
+	cv::imshow("Image with Lines Detected", image);
+	cv::waitKey(0);
+	return 0;
+}
+
+int plat_line_combox_point()
+{
+	// 读取图像
+	cv::Mat image = cv::imread("D:\\image_line.png");
+
+	// 检查图像是否成功加载
+	if (image.empty()) {
+		std::cerr << "Error: Could not load image." << std::endl;
+		return 1;
+	}
+
+	// 存储中心点坐标的向量
+	std::vector<cv::Point> centerPoints;
+
+	// 将图像转换为灰度图像
+	cv::Mat grayImage;
+	cv::cvtColor(image, grayImage, cv::COLOR_BGR2GRAY);
+
+	// 使用 Canny 边缘检测算法检测边缘
+	cv::Mat edges;
+	cv::Canny(grayImage, edges, 50, 150, 3);
+
+	// 使用霍夫变换检测直线
+	std::vector<cv::Vec2f> lines;
+	cv::HoughLines(edges, lines, 1, CV_PI / 180, 100);
+
+	// 计算图像下四分之一处水平线的位置
+	int imageHeight = image.rows;
+	int horizontalLineY = imageHeight*3 / 4;
+
+	// 绘制检测到的直线并标记中心点
+	for (size_t i = 0; i < lines.size(); ++i) {
+		float rho = lines[i][0];
+		float theta = lines[i][1];
+		double a = cos(theta);
+		double b = sin(theta);
+		double x0 = a * rho;
+		double y0 = b * rho;
+
+		// 计算直线的两个端点
+		cv::Point pt1(cvRound(x0 + 1000 * (-b)), cvRound(y0 + 1000 * (a)));
+		cv::Point pt2(cvRound(x0 - 1000 * (-b)), cvRound(y0 - 1000 * (a)));
+
+		// 计算直线与水平线的交点坐标
+		double intersectionX = (horizontalLineY - y0) / b;
+		cv::Point intersectionPoint(cvRound(intersectionX), horizontalLineY);
+
+		// 存储中心点坐标
+		centerPoints.push_back(intersectionPoint);
+
+		// 绘制直线
+		cv::line(image, pt1, pt2, cv::Scalar(0, 0, 255), 2, cv::LINE_AA);
+
+		// 绘制交点坐标
+		cv::circle(image, intersectionPoint, 5, cv::Scalar(255, 0, 0), -1); // 蓝色点
+	}
+
+	// 输出中心点坐标
+	for (size_t i = 0; i < centerPoints.size(); ++i) {
+		std::cout << "Center of Line " << i + 1 << ": (" << centerPoints[i].x << ", " << centerPoints[i].y << ")" << std::endl;
+	}
+
+	// 显示带有检测到的直线、交点和中心点的图像
+	cv::imshow("Image with Lines, Intersection Points, and Centers", image);
+	cv::waitKey(0);
+
+	return 0;
+}
+
+int plat_chec_255_point()
+{
+	// 读取图像
+	cv::Mat image = cv::imread("D:\\image_line.png");
+
+	// 检查图像是否成功加载
+	if (image.empty()) {
+		std::cerr << "Error: Could not load image." << std::endl;
+		return 1;
+	}
+
+	// 获取图像的高度和宽度
+	int imageHeight = image.rows;
+	int imageWidth = image.cols;
+
+	// 计算水平四分之一位置的 y 坐标
+	int y = imageHeight*3 / 4;
+
+	// 获取水平四分之一位置处的像素数组
+	cv::Vec3b* pixelRow = image.ptr<cv::Vec3b>(y);
+
+	// 初始化连续像素值为 255 的横坐标位置
+	int startX = -1;
+	int endX = -1;
+
+	// 遍历像素数组，查找连续像素值为 255 的横坐标位置
+	for (int x = 0; x < imageWidth; ++x) {
+		// 获取当前像素的值
+		cv::Vec3b pixel = pixelRow[x];
+
+		// 如果当前像素值为白色 (255, 255, 255)
+		if (pixel[0] == 255 && pixel[1] == 255 && pixel[2] == 255) {
+			// 如果 startX 未被设置，设置为当前 x 坐标
+			if (startX == -1) {
+				startX = x;
+			}
+			// 更新 endX 为当前 x 坐标
+			endX = x;
+		}
+	}
+
+	// 输出连续像素值为 255 的横坐标位置范围
+	if (startX != -1 && endX != -1) {
+		std::cout << "连续像素值为 255 的横坐标范围: " << startX << " 到 " << endX << std::endl;
+	}
+	else {
+		std::cout << "未找到连续像素值为 255 的横坐标范围。" << std::endl;
+	}
+
+	return 0;
+}
+
+int main()
+{
+	plat_chec_255_point();
+
+	return 0;
+}
