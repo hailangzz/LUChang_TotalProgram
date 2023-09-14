@@ -1,0 +1,198 @@
+#include <fstream>  //文件
+#include <sstream>  //流
+#include <iostream>
+#include <opencv2/dnn.hpp>        //深度学习模块-仅提供推理功能
+#include <opencv2/imgproc.hpp>    //图像处理模块
+#include <opencv2/highgui.hpp>    //媒体的输入输出/视频捕捉/图像和视频的编码解码/图形界面的接口
+
+using namespace cv;
+using namespace dnn;
+using namespace std;
+
+struct Net_config {
+	float confThreshold; // 置信度阈值
+	float nmsThreshold;  // 非最大抑制阈值
+	float objThreshold;  // 对象置信度阈值
+	string modelpath;
+};
+
+int endsWith(string s, string sub) {
+	return s.rfind(sub) == (s.length() - sub.length()) ? 1 : 0;
+}
+
+const float anchors_640[3][6] = { {10.0,  13.0, 16.0,  30.0,  33.0,  23.0},
+				  {30.0,  61.0, 62.0,  45.0,  59.0,  119.0},
+				  {116.0, 90.0, 156.0, 198.0, 373.0, 326.0} };
+
+class YOLO {
+public:
+	YOLO(Net_config config); //构造函数
+	void detect(Mat& frame); //通过图像参数，进行目标检测
+private:
+	float* anchors;
+	int num_stride;
+	int inpWidth;
+	int inpHeight;
+	vector<string> class_names;
+	int num_class;
+	float confThreshold;
+	float nmsThreshold;
+	float objThreshold;
+	const bool keep_ratio = true;
+	Net net;
+	void drawPred(float conf, int left, int top, int right, int bottom, Mat& frame, int classid);
+	Mat resize_image(Mat srcimg, int* newh, int* neww, int* top, int* left);
+};
+
+
+YOLO::YOLO(Net_config config) {
+	this->confThreshold = config.confThreshold;
+	this->nmsThreshold = config.nmsThreshold;
+	this->objThreshold = config.objThreshold;
+	this->net = readNet(config.modelpath);
+	ifstream ifs("class.names"); //class.name中写入标签内容，当前只有'person'，位置与当前.cpp文件同级
+	string line;
+	while (getline(ifs, line)) this->class_names.push_back(line);
+	this->num_class = class_names.size();
+	if (endsWith(config.modelpath, "6.onnx")) { //根据onnx的输入图像格式 选择分辨率 当前为1280x1280 可灵活调整
+		anchors = (float*)anchors_640;
+		this->num_stride = 4;      //深度
+		this->inpHeight = 1280;    //高
+		this->inpWidth = 1280;     //宽
+	}
+	else {                                       //当前为640x640 可以resize满足onnx需求 也可以调整数组或if中的onnx判断
+		anchors = (float*)anchors_640;
+		this->num_stride = 3;
+		this->inpHeight = 640;
+		this->inpWidth = 640;
+	}
+}
+
+Mat YOLO::resize_image(Mat srcimg, int* newh, int* neww, int* top, int* left) {//传入图像以及需要改变的参数
+	int srch = srcimg.rows, srcw = srcimg.cols;
+	*newh = this->inpHeight;
+	*neww = this->inpWidth;
+	Mat dstimg;
+	if (this->keep_ratio && srch != srcw) {
+		float hw_scale = (float)srch / srcw;
+		if (hw_scale > 1) {
+			*newh = this->inpHeight;
+			*neww = int(this->inpWidth / hw_scale);
+			resize(srcimg, dstimg, Size(*neww, *newh), INTER_AREA);
+			*left = int((this->inpWidth - *neww) * 0.5);
+			copyMakeBorder(dstimg, dstimg, 0, 0, *left, this->inpWidth - *neww - *left, BORDER_CONSTANT, 114);
+		}
+		else {
+			*newh = (int)this->inpHeight * hw_scale;
+			*neww = this->inpWidth;
+			resize(srcimg, dstimg, Size(*neww, *newh), INTER_AREA);
+			*top = (int)(this->inpHeight - *newh) * 0.5;
+			copyMakeBorder(dstimg, dstimg, *top, this->inpHeight - *newh - *top, 0, 0, BORDER_CONSTANT, 114);
+		}
+	}
+	else {
+		resize(srcimg, dstimg, Size(*neww, *newh), INTER_AREA);
+	}
+	return dstimg;
+}
+
+void YOLO::drawPred(float conf, int left, int top, int right, int bottom, Mat& frame, int classid) {
+	//绘制一个显示边界框的矩形
+	rectangle(frame, Point(left, top), Point(right, bottom), Scalar(0, 0, 255), 2);
+
+	//获取类名的标签及其置信度
+	string label = format("%.2f", conf);
+	label = this->class_names[classid] + ":" + label;
+
+	//在边界框顶部显示标签
+	int baseLine;
+	Size labelSize = getTextSize(label, FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+	top = max(top, labelSize.height);
+	//rectangle(frame, Point(left, top - int(1.5 * labelSize.height)), Point(left + int(1.5 * labelSize.width), top + baseLine), Scalar(0, 255, 0), FILLED);
+	putText(frame, label, Point(left, top), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(0, 255, 0), 1);
+}
+
+
+void YOLO::detect(Mat& frame) {
+	int newh = 0, neww = 0, padh = 0, padw = 0;
+	Mat dstimg = this->resize_image(frame, &newh, &neww, &padh, &padw);
+	Mat blob = blobFromImage(dstimg, 1 / 255.0, Size(this->inpWidth, this->inpHeight), Scalar(0, 0, 0), true, false);
+	this->net.setInput(blob);
+	vector<Mat> outs;
+	this->net.forward(outs, this->net.getUnconnectedOutLayersNames());
+	int num_proposal = outs[0].size[1];
+	int nout = outs[0].size[2];
+	if (outs[0].dims > 2) {
+		outs[0] = outs[0].reshape(0, num_proposal);
+	}
+	//生成提案
+	vector<float> confidences;
+	vector<Rect> boxes;
+	vector<int> classIds;
+	float ratioh = (float)frame.rows / newh, ratiow = (float)frame.cols / neww;
+	int n = 0, q = 0, i = 0, j = 0, row_ind = 0;  //xmin,ymin,xamx,ymax,box_score,class_score
+	float* pdata = (float*)outs[0].data;
+	for (n = 0; n < this->num_stride; n++) { //特征图尺度
+		const float stride = pow(2, n + 3);
+		int num_grid_x = (int)ceil((this->inpWidth / stride));
+		int num_grid_y = (int)ceil((this->inpHeight / stride));
+		for (q = 0; q < 3; q++) {
+			const float anchor_w = this->anchors[n * 6 + q * 2];
+			const float anchor_h = this->anchors[n * 6 + q * 2 + 1];
+			for (i = 0; i < num_grid_y; i++) {
+				for (j = 0; j < num_grid_x; j++) {
+					float box_score = pdata[4];
+					if (box_score > this->objThreshold) {
+						Mat scores = outs[0].row(row_ind).colRange(5, nout);
+						Point classIdPoint;
+						double max_class_socre;
+						//获取最高分的值和位置
+						minMaxLoc(scores, 0, &max_class_socre, 0, &classIdPoint);
+						max_class_socre *= box_score;
+						if (max_class_socre > this->confThreshold) {
+							const int class_idx = classIdPoint.x;
+							float cx = pdata[0];  //cx
+							float cy = pdata[1];  //cy
+							float w = pdata[2];   //w
+							float h = pdata[3];   //h
+							int left = int((cx - padw - 0.5 * w) * ratiow);
+							int top = int((cy - padh - 0.5 * h) * ratioh);
+							confidences.push_back((float)max_class_socre);
+							boxes.push_back(Rect(left, top, (int)(w * ratiow), (int)(h * ratioh)));
+							classIds.push_back(class_idx);
+						}
+					}
+					row_ind++;
+					pdata += nout;
+				}
+			}
+		}
+	}
+	// 执行非最大抑制以消除冗余重叠框
+	// 置信度较低
+	vector<int> indices;
+	dnn::NMSBoxes(boxes, confidences, this->confThreshold, this->nmsThreshold, indices);
+	for (size_t i = 0; i < indices.size(); ++i) {
+		int idx = indices[i];
+		Rect box = boxes[idx];
+		this->drawPred(confidences[idx], box.x, box.y, box.x + box.width, box.y + box.height, frame, classIds[idx]);
+	}
+}
+
+int main() {
+	//加载onnx模型
+	Net_config yolo_nets = { 0.3, 0.5, 0.3, "yolov5n_person_320.onnx" };
+	YOLO yolo_model(yolo_nets);
+	//加载单张图片
+	string imgpath = "112.png";
+	Mat srcimg = imread(imgpath);
+	//开始检测
+	yolo_model.detect(srcimg);
+	static const string kWinName = "Deep learning object detection in OpenCV";
+	namedWindow(kWinName, WINDOW_NORMAL);
+	imshow(kWinName, srcimg); //显示图片
+	waitKey(0);               //保持停留
+	destroyAllWindows();      //关闭窗口并取消分配任何相关的内存使用
+}
+
+
