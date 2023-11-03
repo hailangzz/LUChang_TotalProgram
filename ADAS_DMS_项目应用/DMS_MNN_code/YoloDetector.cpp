@@ -120,7 +120,7 @@ namespace dms {
 	bool YoloDetector::detect(cv::Mat frame,std::vector<BoxInfo>& objects)
 	{	
 		// get frame image into network Tensor
-		this->GetInputImageIntoTensor(frame);
+		GetInputImageIntoTensor(frame);
 
 		// run network
 
@@ -144,27 +144,38 @@ namespace dms {
 		tensor_anchors->copyToHostTensor(&tensor_anchors_host);
 
 		std::vector<BoxInfo> boxes;
+
+
+		boxes = decodeInfer(tensor_scores_host, yolo_model_config_.yolo_layers[2].stride, yolo_model_config_.yolosize, yolo_model_config_.num_classes, yolo_model_config_.yolo_layers[2].anchors, yolo_model_config_.threshold);
+		objects.insert(objects.begin(), boxes.begin(), boxes.end());
+
+		boxes = decodeInfer(tensor_boxes_host, yolo_model_config_.yolo_layers[1].stride, yolo_model_config_.yolosize, yolo_model_config_.num_classes, yolo_model_config_.yolo_layers[1].anchors, yolo_model_config_.threshold);
+		objects.insert(objects.begin(), boxes.begin(), boxes.end());
+
+		boxes = decodeInfer(tensor_anchors_host, yolo_model_config_.yolo_layers[0].stride, yolo_model_config_.yolosize, yolo_model_config_.num_classes, yolo_model_config_.yolo_layers[0].anchors, yolo_model_config_.threshold);
+		objects.insert(objects.begin(), boxes.begin(), boxes.end());
 		
-		for (int anchor_index = 1; anchor_index < 3; anchor_index++) {
-			boxes = decodeInfer(tensor_scores_host, \
-				yolo_model_config_.yolo_layers[anchor_index].stride, \
-				yolo_model_config_.yolosize, \
-				yolo_model_config_.num_classes, \
-				yolo_model_config_.yolo_layers[anchor_index].anchors, \
-				yolo_model_config_.threshold);
 
-			//for (const auto &box_info:boxes) {
-			//	std::cout<<"box_info.label"<< box_info.label<< "box_info.score"<<box_info.score <<std::endl;
-			//}
-
-			objects.insert(objects.begin(), boxes.begin(), boxes.end());
-		}
-			
 
 		YoloNMS(objects, yolo_model_config_.nms_threshold);
 		//for (const auto& box_info : objects) {
 		//	std::cout << "box_info.label" << box_info.label << "box_info.score" << box_info.score << std::endl;
 		//}
+	}
+
+	void YoloDetector::ScaleCoords(std::vector<BoxInfo>& object, int width_image_origin, int height_image_origin) {
+		float w_ratio = float(width_image_origin) / float(yolo_model_config_.model_input_width);
+		float h_ratio = float(height_image_origin) / float(yolo_model_config_.model_input_height);
+
+
+		for (auto& box : object)
+		{
+			box.x1 *= w_ratio;
+			box.x2 *= w_ratio;
+			box.y1 *= h_ratio;
+			box.y2 *= h_ratio;
+		}
+		return;
 	}
 
 }

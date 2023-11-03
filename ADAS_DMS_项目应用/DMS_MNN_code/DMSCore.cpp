@@ -144,7 +144,7 @@ bool dms::DMSCore::detectSmokingEvent(BoxInfo object) {
             }
         }
     }
-
+    //std::cout <<"object.score"<< object.score << "config_.smoking_threshold" << config_.smoking_threshold <<": smoking_event_.duration:" << smoking_event_.duration << std::endl;
     return true;
 }
 
@@ -210,8 +210,10 @@ bool dms::DMSCore::detectSunglassesEvent(BoxInfo object) {
     return true;
 }
 
-dms::DMSCore::DistractedDrivingEventBool dms::DMSCore::detectDistractedDrivingEvent() {
-    
+
+dms::DMSCore::DistractedDrivingEventBool dms::DMSCore::detectDistractedDrivingEvent(cv::Mat& src) {
+
+
     for (const auto& object : yolo_object_) {
         
         //std::cout<<"object.label:"<< object.label<<"object.score:"<< object.score << std::endl;
@@ -224,10 +226,40 @@ dms::DMSCore::DistractedDrivingEventBool dms::DMSCore::detectDistractedDrivingEv
         }
         if (object.label == 2) {
             distracted_driving_event_bool.calling_event_flag = detectCallingEvent(object);
-        }        
+        }
+
+        // Face detection bounding box and landmarks
+        cv::rectangle(src, cv::Point2f(object.x1, object.y1),
+            cv::Point2f(object.x2, object.y2),
+            cv::Scalar(255, 0, 255), 2);
+
+    }
+
+    //当未检测到分心驾驶行为时，进行行为事件信息重置。
+    if (yolo_object_.size() == 0) {
+        now_lost_target_detection_num_ += 1;
+        if (now_lost_target_detection_num_ > lost_target_detection_maxnum_) {
+            sunglasses_event_.detected = false;
+            sunglasses_event_.timestamp = 0.0;
+            sunglasses_event_.duration = 0.0;
+            distracted_driving_event_bool.sunglasses_event_flag = false;
+
+            smoking_event_.detected = false;
+            smoking_event_.timestamp = 0.0;
+            smoking_event_.duration = 0.0;
+            distracted_driving_event_bool.smoking_event_flag = false;
+
+            calling_event_.detected = false;
+            calling_event_.timestamp = 0.0;
+            calling_event_.duration = 0.0;
+            distracted_driving_event_bool.calling_event_flag = false;
+
+            now_lost_target_detection_num_ = 0;
+        }
+        
     }
     //printf("calling_event_flag: %s, \n", (distracted_driving_event.calling_event_flag) ? "calling_event_flag is true" : "calling_event_flag is false");
-
+    //std::cout << "yolo_object_的长度为: " << yolo_object_.size() << std::endl;
     return distracted_driving_event_bool;
 }
 
@@ -326,6 +358,14 @@ void dms::DMSCore::drawEyeCloseTips(cv::Mat& src, bool detected)
     sprintf(label, "Eye closed: %.1fs", eye_close_event_.duration);
     cv::putText(src, label, cv::Point2f(20, 50), 1, 1.5, 
         detected ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 2);
+
+    // Progress bar
+    float bar_width = 200.f;
+    float filled_bar_width = bar_width * MIN_(1.f, eye_close_event_.duration / config_.eye_close_duration_thresh);
+    cv::Rect full_bar_rect(250, 30, bar_width, 20);
+    cv::Rect filled_bar_rect(250, 30, filled_bar_width, 20);
+    cv::rectangle(src, full_bar_rect, detected ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 1);
+    cv::rectangle(src, filled_bar_rect, detected ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), cv::FILLED);
 }
 
 void dms::DMSCore::drawYawnTips(cv::Mat& src, bool detected)
@@ -334,6 +374,14 @@ void dms::DMSCore::drawYawnTips(cv::Mat& src, bool detected)
     sprintf(label, "Yawn: %.1fs", yawn_event_.duration);
     cv::putText(src, label, cv::Point2f(20, 80), 1, 1.5,
         detected ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 2);
+
+    // Progress bar
+    float bar_width = 200.f;
+    float filled_bar_width = bar_width * MIN_(1.f, yawn_event_.duration / config_.yawn_duration_thresh);
+    cv::Rect full_bar_rect(250, 60, bar_width, 20);
+    cv::Rect filled_bar_rect(250, 60, filled_bar_width, 20);
+    cv::rectangle(src, full_bar_rect, detected ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 1);
+    cv::rectangle(src, filled_bar_rect, detected ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), cv::FILLED);
 }
 
 void dms::DMSCore::drawDistractedDrivingTips(cv::Mat& src, DistractedDrivingEventBool detected) {
@@ -342,13 +390,38 @@ void dms::DMSCore::drawDistractedDrivingTips(cv::Mat& src, DistractedDrivingEven
     cv::putText(src, label, cv::Point2f(20, 110), 1, 1.5,
         detected.calling_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 2);
 
+    // Progress bar
+    float calling_bar_width = 200.f;
+    float calling_filled_bar_width = calling_bar_width * MIN_(1.f, calling_event_.duration / config_.calling_duration_thresh);
+    cv::Rect calling_full_bar_rect(250, 90, calling_bar_width, 20);
+    cv::Rect calling_filled_bar_rect(250, 90, calling_filled_bar_width, 20);
+    cv::rectangle(src, calling_full_bar_rect, detected.calling_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 1);
+    cv::rectangle(src, calling_filled_bar_rect, detected.calling_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), cv::FILLED);
+
     
     sprintf(label, "smoking : %.1fs", smoking_event_.duration);
     cv::putText(src, label, cv::Point2f(20, 140), 1, 1.5,
         detected.smoking_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 2);
 
+    // Progress bar
+    float smoking_bar_width = 200.f;
+    float smoking_filled_bar_width = smoking_bar_width * MIN_(1.f, smoking_event_.duration / config_.smoking_duration_thresh);
+    cv::Rect smoking_full_bar_rect(250, 120, smoking_bar_width, 20);
+    cv::Rect smoking_filled_bar_rect(250, 120, smoking_filled_bar_width, 20);
+    cv::rectangle(src, smoking_full_bar_rect, detected.smoking_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 1);
+    cv::rectangle(src, smoking_filled_bar_rect, detected.smoking_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), cv::FILLED);
+
     
     sprintf(label, "sunglasses : %.1fs", sunglasses_event_.duration);
     cv::putText(src, label, cv::Point2f(20, 170), 1, 1.5,
         detected.sunglasses_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 2);
+
+    // Progress bar
+    float sunglasses_bar_width = 200.f;
+    float sunglasses_filled_bar_width = sunglasses_bar_width * MIN_(1.f, sunglasses_event_.duration / config_.sunglasses_duration_thresh);
+    cv::Rect sunglasses_full_bar_rect(250, 150, sunglasses_bar_width, 20);
+    cv::Rect sunglasses_filled_bar_rect(250, 150, sunglasses_filled_bar_width, 20);
+    cv::rectangle(src, sunglasses_full_bar_rect, detected.sunglasses_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), 1);
+    cv::rectangle(src, sunglasses_filled_bar_rect, detected.sunglasses_event_flag ? cv::Scalar(0, 0, 255) : cv::Scalar(0, 255, 0), cv::FILLED);
+    
 }

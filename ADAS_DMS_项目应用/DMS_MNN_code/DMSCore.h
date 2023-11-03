@@ -17,24 +17,24 @@ namespace dms
 			float abnormal_head_pose_duration_thresh = 3.f; // 单位：秒
 
 			float calling_threshold = 0.3;			        // 置信度
-			float calling_duration_thresh = 1.0f;			// 单位：秒
+			float calling_duration_thresh = 1.5f;			// 单位：秒
 			float smoking_threshold = 0.3;			        // 置信度
-			float smoking_duration_thresh = 3.f;		    // 单位：秒
+			float smoking_duration_thresh = 1.5f;		    // 单位：秒
 			float sunglasses_threshold = 0.3;			    // 置信度
-			float sunglasses_duration_thresh = 3.f;		    // 单位：秒
+			float sunglasses_duration_thresh = 1.5f;		    // 单位：秒
 		};
 
 		struct DistractedDrivingEventBool {
-			bool calling_event_flag = false;
-			bool smoking_event_flag = false;
-			bool sunglasses_event_flag = false;
+			bool calling_event_flag = false;                //打电话事件状态
+			bool smoking_event_flag = false;				//抽烟事件状态		
+			bool sunglasses_event_flag = false;				//戴墨镜事件状态
 		};
 
 		struct Event
 		{
 			bool detected = false; // 是否检测到某事件
 			double timestamp;      // 检测到事件的时间
-			double duration;       // 事件累计时长(秒)
+			double duration = 0;   // 事件累计时长(秒)
 		};
 
 	public:
@@ -49,7 +49,8 @@ namespace dms
 		bool detectCallingEvent(BoxInfo object);
 		bool detectSmokingEvent(BoxInfo object);
 		bool detectSunglassesEvent(BoxInfo object);
-		DistractedDrivingEventBool detectDistractedDrivingEvent();
+		DistractedDrivingEventBool detectDistractedDrivingEvent(cv::Mat& src);
+		
 
 		
 		float estimatePERCLOS();
@@ -78,7 +79,9 @@ namespace dms
 		Event smoking_event_;
 		Event sunglasses_event_;
 		DistractedDrivingEventBool distracted_driving_event_bool;
-		
+
+		int lost_target_detection_maxnum_ = 10;      // 目标检测最大丢失帧数
+		int now_lost_target_detection_num_ = 0;      // 目标检测当前丢失帧数
 
 
 		cv::Mat head_pose_rmat_;
@@ -88,6 +91,6 @@ namespace dms
 		std::vector<cv::Point3f> landmarks_3D_;
 		std::vector<cv::Point2f> head_pose_landmarks_2D_;
 		std::vector<cv::Point3f> head_pose_landmarks_3D_;
-		std::vector<BoxInfo> yolo_object_;
+		std::vector<BoxInfo> yolo_object_;           // 分心驾驶目标检测数组
 	};
 }

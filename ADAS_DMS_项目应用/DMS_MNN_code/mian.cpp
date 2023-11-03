@@ -135,16 +135,22 @@ int main()
 		landmarker.drawRightEyeContour(frame_src, object.landmarks_3D);
 		landmarker.drawMouthContour(frame_src, object.landmarks_3D);
 
-		dms_core.updateLandmarks3D(object.landmarks_3D);		
-		bool eye_close_detected = dms_core.detectEyeCloseEvent();
-		bool yawn_detected = dms_core.detectYawnEvent();
-		dms_core.drawEyeCloseTips(frame_src, eye_close_detected);
-		dms_core.drawYawnTips(frame_src, yawn_detected);
+		dms_core.updateLandmarks3D(object.landmarks_3D);
+		//bool eye_close_detected = dms_core.detectEyeCloseEvent();
+		//bool yawn_detected = dms_core.detectYawnEvent();
+		//dms_core.drawEyeCloseTips(frame_src, eye_close_detected);
+		//dms_core.drawYawnTips(frame_src, yawn_detected);
 
 	}
+	bool eye_close_detected = dms_core.detectEyeCloseEvent();
+	bool yawn_detected = dms_core.detectYawnEvent();
+	dms_core.drawEyeCloseTips(frame_src, eye_close_detected);
+	dms_core.drawYawnTips(frame_src, yawn_detected);
 
+	yolodetector.ScaleCoords(yolo_object, in.width,in.height);
 	dms_core.updateYoloDetectorObject(yolo_object);	
-	auto distracted_driving_event_bool = dms_core.detectDistractedDrivingEvent();
+
+	auto distracted_driving_event_bool = dms_core.detectDistractedDrivingEvent(frame_src);
 	//distracted_driving_event_bool = dms_core.
 	dms_core.drawDistractedDrivingTips(frame_src, distracted_driving_event_bool);
 
